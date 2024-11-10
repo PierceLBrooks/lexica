@@ -9,6 +9,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,9 +23,12 @@ public class StringTrie extends Trie {
 
     private final Node rootNode;
 
+    private long wordCount;
+
     public StringTrie(Language language) {
         super(language);
         rootNode = new Node(language);
+        wordCount = 0;
     }
 
     /**
@@ -82,15 +86,39 @@ public class StringTrie extends Trie {
     private StringTrie(Language language, InputStream in, TransitionMap transitionMap) throws IOException {
         super(language);
 
-        Set<String> availableStrings = new HashSet<>(transitionMap.getSize());
-        for (int i = 0; i < transitionMap.getSize(); i++) {
-            availableStrings.add(transitionMap.valueAt(i));
+        Set<String> availableStrings = null;
+        if (transitionMap != null) {
+            availableStrings = new HashSet<>(transitionMap.getSize());
+            for (int i = 0; i < transitionMap.getSize(); i++) {
+                availableStrings.add(transitionMap.valueAt(i));
+            }
         }
-        rootNode = new Node(new DataInputStream(new BufferedInputStream(in)), language, new CheapTransitionMap(transitionMap), availableStrings, false, null, 0);
+
+        DataInputStream stream = new DataInputStream(new BufferedInputStream(in));
+        ArrayList<Byte> data = new ArrayList<>();
+        byte datum = stream.readByte();
+        while (datum != 0) {
+            data.add(datum);
+            datum = stream.readByte();
+        }
+        if (!data.isEmpty()) {
+            byte[] bytes = new byte[data.size()];
+            for (int i = 0; i < data.size(); i++) {
+                bytes[i] = data.get(i).byteValue();
+            }
+            wordCount = Long.parseUnsignedLong(new String(bytes, "UTF-8"));
+        }
+        rootNode = new Node(stream, language, (transitionMap != null) ? new CheapTransitionMap(transitionMap) : null, availableStrings, false, null, 0);
+    }
+
+    @Override
+    public long getWordCount() {
+        return wordCount;
     }
 
     @Override
     public void addWord(String w) {
+        wordCount += 1;
         rootNode.addSuffix(w, 0);
     }
 
@@ -101,6 +129,8 @@ public class StringTrie extends Trie {
 
     @Override
     public void write(OutputStream out) throws IOException {
+        out.write(Long.toUnsignedString(wordCount).getBytes("UTF-8"));
+        out.write(new byte[]{0});
         rootNode.writeNode(out);
     }
 
@@ -241,7 +271,7 @@ public class StringTrie extends Trie {
                     input.readFully(bytes);
 
                     String string = new String(bytes);
-                    if (depth == 0 && transitionMap.contains(string) || depth > 0 && transitionMap.canTransition(lastChar, string)) {
+                    if (transitionMap == null || (depth == 0 && transitionMap.contains(string) || depth > 0 && transitionMap.canTransition(lastChar, string))) {
                         childStrings[i] = string;
                     }
                 }

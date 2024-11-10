@@ -6,7 +6,9 @@ import com.serwylo.lexica.lang.Language
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.io.BufferedReader
 import java.io.File
+import java.io.InputStreamReader
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
@@ -37,6 +39,7 @@ fun main(args: Array<String>) {
 
     val languageMetadata: Map<Language, LanguageMetadata> =
         Language.allLanguages.values.associateWith { language ->
+            val wordCount = BufferedReader(InputStreamReader(File(dictDir, language.dictionaryFileName).inputStream())).lines().count();
             val charProbs = CharProbGenerator(File(lettersDir, language.letterDistributionFileName).inputStream(), language)
 
             LanguageMetadata(
@@ -47,7 +50,8 @@ fun main(args: Array<String>) {
                 letterProbabilities = readLetters(language, lettersDir),
                 letterScores = charProbs.alphabet.associateWith { letter ->
                     language.getPointsForLetter(language.applyMandatorySuffix(letter))
-                }
+                },
+                wordCount
             )
         }
 
@@ -147,4 +151,5 @@ data class LanguageMetadata(
     val definitionUrl: String,
     val letterProbabilities: Map<String, List<Int>>,
     val letterScores: Map<String, Int>,
+    val wordCount: Long
 )

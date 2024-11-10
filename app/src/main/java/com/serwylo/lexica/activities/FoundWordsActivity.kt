@@ -5,8 +5,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.serwylo.lexica.R
 import com.serwylo.lexica.ThemeManager
 import com.serwylo.lexica.Util
 import com.serwylo.lexica.activities.score.WordDefiner
@@ -16,6 +18,7 @@ import com.serwylo.lexica.db.*
 import com.serwylo.lexica.lang.Language
 import com.serwylo.lexica.lang.LanguageLabel
 import com.serwylo.lexica.view.CustomTextArrayAdapter
+import net.healeys.trie.StringTrie
 
 class FoundWordsActivity : AppCompatActivity() {
 
@@ -23,6 +26,7 @@ class FoundWordsActivity : AppCompatActivity() {
     private lateinit var selectedLanguage: Language
 
     private val languages = Language.allLanguages.values.toList()
+    private var originalTitle = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -62,9 +66,21 @@ class FoundWordsActivity : AppCompatActivity() {
     private fun loadWords() {
         val repo = SelectedWordRepository(applicationContext)
 
-        repo.findAllWordsByLanguage(selectedLanguage).observe(this, { words ->
+        repo.findAllWordsByLanguage(selectedLanguage).observe(this) { words ->
             binding.foundWordsList.adapter = WordsAdapter(words.map { it.word })
-        })
+            adjustTitle(words)
+        }
+    }
+
+    private fun adjustTitle(words: List<SelectedWord>) {
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        if (originalTitle.isEmpty()) {
+            originalTitle = toolbar.title.toString()
+        }
+        val trieFileName = selectedLanguage.trieFileName
+        val id = resources.getIdentifier("raw/" + trieFileName.substring(0, trieFileName.lastIndexOf('.')), null, packageName)
+        val dict = StringTrie.Deserializer().deserialize(resources.openRawResource(id), null, selectedLanguage)
+        toolbar.title = originalTitle+" ("+   words.size+"/"+dict.wordCount+")"
     }
 
     inner class WordsAdapter(val words: List<String>) : RecyclerView.Adapter<ViewHolder>() {

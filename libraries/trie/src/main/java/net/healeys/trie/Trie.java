@@ -15,6 +15,8 @@ public abstract class Trie implements WordFilter {
         this.language = language;
     }
 
+    public abstract long getWordCount();
+
     public abstract void addWord(String w);
 
     public abstract boolean isWord(String w);
