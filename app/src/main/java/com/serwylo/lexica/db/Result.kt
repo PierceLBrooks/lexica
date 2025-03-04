@@ -21,4 +21,5 @@ data class Result(
     val maxScore: Long,
     val numWords: Int = 0,
     val maxNumWords: Int = 0,
+    val date: Long = 0,
 ) : Parcelable

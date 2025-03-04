@@ -49,6 +49,7 @@ class MigrateHighScoresFromPreferences(private val context: Context) {
                     numWords = 0,
                     maxScore = score.highScore.toLong(),
                     score = score.highScore.toLong(),
+                    date = System.currentTimeMillis()
             )
             resultDao.insert(result)
 
@@ -79,6 +80,7 @@ class MigrateHighScoresFromPreferences(private val context: Context) {
                 maxScore = 300,
                 numWords = 50,
                 score = 120,
+                date = System.currentTimeMillis()
         )
 
         resultDao.insert(result)

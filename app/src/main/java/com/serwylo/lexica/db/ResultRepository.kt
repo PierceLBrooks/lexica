@@ -36,7 +36,8 @@ class ResultRepository(private val resultDao: ResultDao, private val selectedWor
                 score.score.toLong(),
                 score.maxScore.toLong(),
                 score.numWords,
-                score.maxWords
+                score.maxWords,
+                System.currentTimeMillis()
         )
 
         val newResultId = resultDao.insert(result)

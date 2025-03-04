@@ -9,7 +9,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.text.TextUtilsCompat
+import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.serwylo.lexica.R
@@ -21,6 +25,9 @@ import com.serwylo.lexica.db.*
 import com.serwylo.lexica.lang.Language
 import com.serwylo.lexica.lang.LanguageLabel
 import com.serwylo.lexica.view.CustomTextArrayAdapter
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 class HighScoresActivity : AppCompatActivity() {
 
@@ -150,8 +157,51 @@ class HighScoresActivity : AppCompatActivity() {
         fun bind(highScore: Result) {
 
             val context = this@HighScoresActivity
+            val reverse = TextUtilsCompat.getLayoutDirectionFromLocale(Locale.getDefault()) == ViewCompat.LAYOUT_DIRECTION_RTL
+            val language = Language.fromOrNull(highScore.langCode)
+            val calendar = Calendar.getInstance()
+            calendar.timeInMillis = highScore.date
 
+            var message = ""
+            var formatter = SimpleDateFormat()
+            if (language != null) {
+                formatter = SimpleDateFormat("dd/MM/yyyy hh:mm:ss", language.locale)
+            } else {
+                formatter = SimpleDateFormat("dd/MM/yyyy hh:mm:ss")
+            }
+            if (reverse) {
+                message += highScore.score.toString()
+            } else {
+                message += context.getString(R.string.score)
+            }
+            message += " "
+            if (reverse) {
+                message += context.getString(R.string.score)
+            } else {
+                message += highScore.score.toString()
+            }
+            message += "\n"
+            if (reverse) {
+                message += formatter.format(calendar.time)
+            } else {
+                message += context.getString(R.string.time)
+            }
+            message += " "
+            if (reverse) {
+                message += context.getString(R.string.time)
+            } else {
+                message += formatter.format(calendar.time)
+            }
+            binding.numPoints.tag = message.toString()
             binding.numPoints.text = highScore.score.toString()
+            binding.numPoints.setOnLongClickListener {
+                val builder = AlertDialog.Builder(context)
+                    .setTitle(R.string.high_score)
+                    .setMessage(binding.numPoints.tag.toString())
+                    .setNeutralButton(R.string.button_ok, null)
+                builder.create().show()
+                true
+            }
             binding.maxPointsSuffix.text = context.resources.getQuantityString(R.plurals.max_score_points_suffix, highScore.maxScore.toInt(), highScore.maxScore.toInt())
             binding.maxWords.text = context.resources.getQuantityString(R.plurals.num_found_words_out_of_total, highScore.maxNumWords, highScore.numWords, highScore.maxNumWords)
 
